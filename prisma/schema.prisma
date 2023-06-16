@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+  previewFeatures = ["clientExtensions"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model company {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description String?  @db.VarChar(255)
+  image       String?  @db.VarChar(255)
+  name        String   @db.VarChar(255)
+  created_at  DateTime @default(now()) @db.Timestamp(6)
+  updated_at  DateTime @default(now()) @db.Timestamp(6)
+  user_id     String   @db.Uuid
+  tenant_id   String   @db.VarChar(255)
+  user        user     @relation(fields: [user_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model service_request {
+  id            String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  description   String      @db.VarChar(255)
+  client_id     String      @db.Uuid
+  work_order_id String?     @db.Uuid
+  created_at    DateTime    @default(now()) @db.Timestamp(6)
+  updated_at    DateTime    @default(now()) @db.Timestamp(6)
+  user          user        @relation(fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  work_order    work_order? @relation(fields: [work_order_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model user {
+  id                                              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                                           String            @unique @db.VarChar(255)
+  firstName                                       String?           @db.VarChar(255)
+  lastName                                        String?           @db.VarChar(255)
+  roq_user_id                                     String            @db.VarChar(255)
+  tenant_id                                       String            @db.VarChar(255)
+  created_at                                      DateTime          @default(now()) @db.Timestamp(6)
+  updated_at                                      DateTime          @default(now()) @db.Timestamp(6)
+  company                                         company[]
+  service_request                                 service_request[]
+  work_order_work_order_client_idTouser           work_order[]      @relation("work_order_client_idTouser")
+  work_order_work_order_field_technician_idTouser work_order[]      @relation("work_order_field_technician_idTouser")
+  work_order_work_order_team_leader_idTouser      work_order[]      @relation("work_order_team_leader_idTouser")
+}
+
+model work_order {
+  id                                        String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  status                                    String            @db.VarChar(50)
+  client_id                                 String            @db.Uuid
+  field_technician_id                       String?           @db.Uuid
+  team_leader_id                            String?           @db.Uuid
+  created_at                                DateTime          @default(now()) @db.Timestamp(6)
+  updated_at                                DateTime          @default(now()) @db.Timestamp(6)
+  service_request                           service_request[]
+  user_work_order_client_idTouser           user              @relation("work_order_client_idTouser", fields: [client_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_work_order_field_technician_idTouser user?             @relation("work_order_field_technician_idTouser", fields: [field_technician_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user_work_order_team_leader_idTouser      user?             @relation("work_order_team_leader_idTouser", fields: [team_leader_id], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
